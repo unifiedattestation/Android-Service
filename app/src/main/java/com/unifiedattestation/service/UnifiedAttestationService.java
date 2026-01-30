@@ -84,6 +84,50 @@ public class UnifiedAttestationService extends Service {
                 }
             });
         }
+
+        @Override
+        public void requestIntegrityTokenWithChain(
+                String backendId,
+                String projectId,
+                String requestHash,
+                List<String> attestationChain,
+                IIntegrityTokenCallback callback
+        ) {
+            int uid = Binder.getCallingUid();
+            if (!rateLimiter.tryAcquire(uid)) {
+                safeError(callback, ERROR_RATE_LIMIT, "Rate limit exceeded");
+                return;
+            }
+            try {
+                IdentityVerifier.enforceCaller(UnifiedAttestationService.this, projectId);
+            } catch (SecurityException e) {
+                safeError(callback, ERROR_INVALID_CALLER, e.getMessage());
+                return;
+            }
+            executor.submit(() -> {
+                try {
+                    BackendEntry entry = findBackend(backendId);
+                    if (entry == null || !entry.enabled) {
+                        safeError(callback, ERROR_BACKEND_NOT_FOUND, "Backend not enabled");
+                        return;
+                    }
+                    if (attestationChain == null || attestationChain.isEmpty()) {
+                        safeError(callback, ERROR_ATTESTATION_FAILED, "Missing attestation chain");
+                        return;
+                    }
+                    String token = UaHttp.postDeviceProcess(
+                            entry.url,
+                            projectId,
+                            requestHash,
+                            attestationChain
+                    );
+                    safeSuccess(callback, token);
+                } catch (Exception e) {
+                    Log.e("UAService", "requestIntegrityTokenWithChain failed", e);
+                    safeError(callback, ERROR_ATTESTATION_FAILED, e.getMessage());
+                }
+            });
+        }
     };
 
     @Override
