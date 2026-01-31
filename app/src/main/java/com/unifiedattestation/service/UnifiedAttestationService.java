@@ -3,6 +3,7 @@ package com.unifiedattestation.service;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -75,7 +76,8 @@ public class UnifiedAttestationService extends Service {
                             entry.url,
                             projectId,
                             requestHash,
-                            chain
+                            chain,
+                            buildDeviceMeta()
                     );
                     safeSuccess(callback, token);
                 } catch (Exception e) {
@@ -119,7 +121,8 @@ public class UnifiedAttestationService extends Service {
                             entry.url,
                             projectId,
                             requestHash,
-                            attestationChain
+                            attestationChain,
+                            buildDeviceMeta()
                     );
                     safeSuccess(callback, token);
                 } catch (Exception e) {
@@ -193,6 +196,20 @@ public class UnifiedAttestationService extends Service {
                 }
             }
         });
+    }
+
+    private org.json.JSONObject buildDeviceMeta() {
+        org.json.JSONObject meta = new org.json.JSONObject();
+        try {
+            meta.put("manufacturer", Build.MANUFACTURER);
+            meta.put("brand", Build.BRAND);
+            meta.put("model", Build.MODEL);
+            meta.put("device", Build.DEVICE);
+            meta.put("buildFingerprint", Build.FINGERPRINT);
+        } catch (Exception e) {
+            Log.w("UAService", "Failed to build device meta", e);
+        }
+        return meta;
     }
 
     private void safeSuccess(IIntegrityTokenCallback callback, String token) {

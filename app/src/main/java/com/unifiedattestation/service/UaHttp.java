@@ -24,7 +24,8 @@ public class UaHttp {
             String baseUrl,
             String projectId,
             String requestHash,
-            List<String> attestationChain
+            List<String> attestationChain,
+            JSONObject deviceMeta
     ) throws Exception {
         String url = normalize(baseUrl) + "/api/v1/device/process";
         JSONObject body = new JSONObject();
@@ -35,6 +36,9 @@ public class UaHttp {
             arr.put(cert);
         }
         body.put("attestationChain", arr);
+        if (deviceMeta != null) {
+            body.put("deviceMeta", deviceMeta);
+        }
         JSONObject response = postJson(url, body);
         return response.getString("token");
     }
