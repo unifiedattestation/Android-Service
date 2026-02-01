@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.unifiedattestation.service'
+    namespace 'net.uattest.service'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.unifiedattestation.service"
+        applicationId "net.uattest.service"
         minSdk 28
         targetSdk 34
         versionCode 1

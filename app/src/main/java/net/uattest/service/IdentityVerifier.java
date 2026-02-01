@@ -1,4 +1,4 @@
-package com.unifiedattestation.service;
+package net.uattest.service;
 
 import android.content.Context;
 import android.content.pm.PackageManager;

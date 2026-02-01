@@ -16,7 +16,7 @@ Sample XML (in `/product/etc/unifiedattestation.xml`):
 ## AIDL
 - `IUnifiedAttestationService.getProviderSet(projectId)` returns enabled backendIds.
 - `requestIntegrityToken(backendId, projectId, requestHash, callback)` performs attestation and returns token.
-- Binding requires `com.unifiedattestation.service.BIND_UNIFIED_ATTESTATION` (signature|privileged).
+- Binding requires `net.uattest.service.BIND_UNIFIED_ATTESTATION` (signature|privileged).
 
 ## Keys
 - Alias format: `ua:<packageName>:<backendId>`.

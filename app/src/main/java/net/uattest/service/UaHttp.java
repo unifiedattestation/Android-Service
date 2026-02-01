@@ -1,4 +1,4 @@
-package com.unifiedattestation.service;
+package net.uattest.service;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

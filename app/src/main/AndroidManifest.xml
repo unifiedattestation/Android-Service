@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <permission
-        android:name="com.unifiedattestation.service.BIND_UNIFIED_ATTESTATION"
+        android:name="net.uattest.service.BIND_UNIFIED_ATTESTATION"
         android:protectionLevel="signature|privileged" />
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -30,9 +30,9 @@
         <service
             android:name=".UnifiedAttestationService"
             android:exported="true"
-            android:permission="com.unifiedattestation.service.BIND_UNIFIED_ATTESTATION">
+            android:permission="net.uattest.service.BIND_UNIFIED_ATTESTATION">
             <intent-filter>
-                <action android:name="com.unifiedattestation.service.BIND" />
+                <action android:name="net.uattest.service.BIND" />
             </intent-filter>
         </service>
     </application>

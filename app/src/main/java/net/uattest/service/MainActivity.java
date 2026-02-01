@@ -1,4 +1,4 @@
-package com.unifiedattestation.service;
+package net.uattest.service;
 
 import androidx.appcompat.app.AppCompatActivity;
 
