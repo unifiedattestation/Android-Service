@@ -1,5 +1,7 @@
 package net.uattest.service;
 
+import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -38,7 +40,24 @@ public class UaHttp {
         body.put("attestationChain", arr);
         if (deviceMeta != null) {
             body.put("deviceMeta", deviceMeta);
+        } else {
+            Log.w("UAService", "postDeviceProcess missing deviceMeta");
         }
+        JSONObject logBody = new JSONObject(body.toString());
+        try {
+            JSONArray logChain = new JSONArray();
+            for (int i = 0; i < arr.length(); i++) {
+                String cert = arr.getString(i);
+                if (cert.length() > 64) {
+                    logChain.put(cert.substring(0, 32) + "..." + cert.substring(cert.length() - 16));
+                } else {
+                    logChain.put(cert);
+                }
+            }
+            logBody.put("attestationChain", logChain);
+        } catch (Exception ignored) {
+        }
+        Log.i("UAService", "postDeviceProcess body=" + logBody.toString());
         JSONObject response = postJson(url, body);
         return response.getString("token");
     }
