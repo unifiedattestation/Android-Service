@@ -31,6 +31,7 @@ public class UnifiedAttestationService extends Service {
             } catch (SecurityException e) {
                 return new ArrayList<>();
             }
+            refreshBackends();
             List<String> ids = new ArrayList<>();
             for (BackendEntry entry : backends) {
                 if (entry.enabled && entry.backendId != null) {
@@ -60,6 +61,7 @@ public class UnifiedAttestationService extends Service {
             }
             executor.submit(() -> {
                 try {
+                    refreshBackends();
                     BackendEntry entry = findBackend(backendId);
                     if (entry == null || !entry.enabled) {
                         safeError(callback, ERROR_BACKEND_NOT_FOUND, "Backend not enabled");
@@ -108,6 +110,7 @@ public class UnifiedAttestationService extends Service {
             }
             executor.submit(() -> {
                 try {
+                    refreshBackends();
                     BackendEntry entry = findBackend(backendId);
                     if (entry == null || !entry.enabled) {
                         safeError(callback, ERROR_BACKEND_NOT_FOUND, "Backend not enabled");
@@ -175,6 +178,10 @@ public class UnifiedAttestationService extends Service {
             }
         }
         return null;
+    }
+
+    private void refreshBackends() {
+        backends = BackendStore.load(this);
     }
 
     private void scheduleHealthChecks() {
