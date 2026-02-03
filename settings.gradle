@@ -15,4 +15,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "unifiedAttestation Service"
 include ':app'
-include ':Android-SDK'
