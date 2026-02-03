@@ -26,8 +26,9 @@ android {
         applicationId "net.uattest.service"
         minSdk 28
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        // versionCode = major*10000 + minor*100 + patch
+        versionCode 10000
+        versionName "1.0.0"
 
     }
 
