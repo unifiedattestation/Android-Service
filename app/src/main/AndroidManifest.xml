@@ -4,7 +4,7 @@
 
     <permission
         android:name="net.uattest.service.BIND_UNIFIED_ATTESTATION"
-        android:protectionLevel="signature|privileged" />
+        android:protectionLevel="normal" />
 
     <uses-permission android:name="android.permission.INTERNET" />
 
