@@ -1,7 +1,10 @@
 package net.uattest.service;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +17,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.nio.charset.StandardCharsets;
@@ -54,9 +58,11 @@ public class MainActivity extends AppCompatActivity {
 
         Button addButton = findViewById(R.id.addBackendButton);
         Button refreshButton = findViewById(R.id.refreshButton);
+        Button submitButton = findViewById(R.id.submitDeviceButton);
 
         addButton.setOnClickListener(v -> addBackend());
         refreshButton.setOnClickListener(v -> refreshHealth());
+        submitButton.setOnClickListener(v -> submitDevice());
 
         backends = BackendStore.load(this);
         renderBackends();
@@ -196,6 +202,44 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             statusText.setText("Sanity error: " + e.getMessage());
         }
+    }
+
+    private void submitDevice() {
+        statusText.setText("Generating device attestation...");
+        executor.submit(() -> {
+            try {
+                org.json.JSONObject json = DeviceSubmitHelper.generate(this);
+                String output = json.toString(2);
+                runOnUiThread(() -> showSubmitResult(output));
+            } catch (Exception e) {
+                Log.e("UAService", "Submit device failed", e);
+                runOnUiThread(() -> statusText.setText("Submit failed: " + e.getMessage()));
+            }
+        });
+    }
+
+    private void showSubmitResult(String json) {
+        statusText.setText("Ready to submit");
+
+        TextView textView = new TextView(this);
+        textView.setText(json);
+        textView.setTextSize(11f);
+        textView.setPadding(24, 16, 24, 16);
+        textView.setTypeface(android.graphics.Typeface.MONOSPACE);
+        textView.setTextIsSelectable(true);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(textView);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Device Registration Data")
+                .setView(scroll)
+                .setPositiveButton("Copy", (dialog, which) -> {
+                    ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    cm.setPrimaryClip(ClipData.newPlainText("ua_device_submit", json));
+                })
+                .setNegativeButton("Close", null)
+                .show();
     }
 
     private static String sha256Hex(byte[] data) {

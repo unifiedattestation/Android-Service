@@ -47,12 +47,25 @@
                 android:text="Add" />
         </LinearLayout>
 
-        <Button
-            android:id="@+id/refreshButton"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Refresh Health" />
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/refreshButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Refresh Health" />
+
+            <Button
+                android:id="@+id/submitDeviceButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Submit Device" />
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/backendList"
