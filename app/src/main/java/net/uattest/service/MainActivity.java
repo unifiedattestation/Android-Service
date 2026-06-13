@@ -9,12 +9,14 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -97,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
                     renderBackends();
                 });
             } catch (Exception e) {
-                Log.e("UAService", "Failed to add backend", e);
+                Log.e(TAG,"Failed to add backend", e);
                 runOnUiThread(() -> statusText.setText("Add failed: " + e.getMessage()));
             }
         });
@@ -160,12 +162,17 @@ public class MainActivity extends AppCompatActivity {
         });
 
         Button check = new Button(this);
-        check.setText("Sanity Check");
+        check.setText("Check");
         check.setOnClickListener(v -> runSanityCheck(entry));
+
+        Button submitBtn = new Button(this);
+        submitBtn.setText("Submit");
+        submitBtn.setOnClickListener(v -> submitToBackend(entry));
 
         actions.addView(toggle);
         actions.addView(remove);
         actions.addView(check);
+        actions.addView(submitBtn);
 
         row.addView(title);
         row.addView(url);
@@ -204,6 +211,135 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private static final String TAG = "UAService";
+    private static final String PREFS_NAME = "ua_service";
+    private static final String OEM_TOKEN_KEY_PREFIX = "oem_token_";
+
+    private void submitToBackend(BackendEntry entry) {
+        if (entry.backendId == null) {
+            statusText.setText("Backend not resolved");
+            return;
+        }
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String savedToken = prefs.getString(OEM_TOKEN_KEY_PREFIX + entry.backendId, null);
+        if (savedToken != null && !savedToken.isEmpty()) {
+            doSubmit(entry, savedToken);
+        } else {
+            showTokenDialog(entry);
+        }
+    }
+
+    private void showTokenDialog(BackendEntry entry) {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(48, 24, 48, 0);
+
+        EditText tokenInput = new EditText(this);
+        tokenInput.setHint("ua_oem_...");
+        layout.addView(tokenInput);
+
+        CheckBox rememberBox = new CheckBox(this);
+        rememberBox.setText("Remember for this backend");
+        rememberBox.setChecked(true);
+        layout.addView(rememberBox);
+
+        new AlertDialog.Builder(this)
+                .setTitle("OEM API Token")
+                .setView(layout)
+                .setPositiveButton("Submit", (dialog, which) -> {
+                    String token = tokenInput.getText().toString().trim();
+                    if (token.isEmpty()) return;
+                    if (rememberBox.isChecked() && entry.backendId != null) {
+                        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                                .edit()
+                                .putString(OEM_TOKEN_KEY_PREFIX + entry.backendId, token)
+                                .apply();
+                    }
+                    doSubmit(entry, token);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void doSubmit(BackendEntry entry, String token) {
+        statusText.setText("Submitting to backend…");
+        executor.submit(() -> {
+            try {
+                org.json.JSONObject json = DeviceSubmitHelper.generate(this);
+                org.json.JSONObject result = UaHttp.postOemDeviceSubmit(entry.url, token, json);
+                String msg = buildSubmitSuccessMsg(result);
+                runOnUiThread(() -> {
+                    statusText.setText("Submit OK");
+                    new AlertDialog.Builder(this)
+                            .setTitle("Submit Successful")
+                            .setMessage(msg)
+                            .setPositiveButton("OK", null)
+                            .show();
+                });
+            } catch (Exception e) {
+                Log.e(TAG,"OEM submit failed", e);
+                String errorMsg = parseSubmitError(e.getMessage());
+                // Check if token was invalid and clear it
+                if (errorMsg.contains("UNAUTHORIZED") && entry.backendId != null) {
+                    getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                            .edit()
+                            .remove(OEM_TOKEN_KEY_PREFIX + entry.backendId)
+                            .apply();
+                }
+                runOnUiThread(() -> {
+                    statusText.setText("Submit failed");
+                    new AlertDialog.Builder(this)
+                            .setTitle("Submit Failed")
+                            .setMessage(errorMsg)
+                            .setPositiveButton("OK", null)
+                            .setNeutralButton("Change Token", (d, w) -> showTokenDialog(entry))
+                            .show();
+                });
+            }
+        });
+    }
+
+    private String buildSubmitSuccessMsg(org.json.JSONObject result) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            org.json.JSONObject family = result.optJSONObject("deviceFamily");
+            if (family != null) {
+                sb.append("Device: ").append(family.optString("codename", "?"));
+                sb.append(family.optBoolean("created") ? " (created)" : " (existed)").append("\n");
+            }
+            org.json.JSONObject policy = result.optJSONObject("buildPolicy");
+            if (policy != null) {
+                sb.append("Build policy: ").append(policy.optBoolean("created") ? "created" : "existed").append("\n");
+            }
+            if (!result.isNull("anchor") && result.optJSONObject("anchor") != null) {
+                sb.append("Anchor registered\n");
+            }
+            String authority = result.optString("matchedAuthorityName", "");
+            if (!authority.isEmpty()) sb.append("Authority: ").append(authority).append("\n");
+            org.json.JSONArray warnings = result.optJSONArray("warnings");
+            if (warnings != null && warnings.length() > 0) {
+                for (int i = 0; i < warnings.length(); i++) {
+                    sb.append("⚠ ").append(warnings.optString(i)).append("\n");
+                }
+            }
+        } catch (Exception ignored) { }
+        return sb.toString().trim().isEmpty() ? "OK" : sb.toString().trim();
+    }
+
+    private String parseSubmitError(String exceptionMsg) {
+        if (exceptionMsg == null) return "Unknown error";
+        int jsonStart = exceptionMsg.indexOf('{');
+        if (jsonStart >= 0) {
+            try {
+                org.json.JSONObject err = new org.json.JSONObject(exceptionMsg.substring(jsonStart));
+                String code = err.optString("code", "");
+                String msg = err.optString("message", "");
+                if (!msg.isEmpty()) return code.isEmpty() ? msg : "[" + code + "] " + msg;
+            } catch (Exception ignored) { }
+        }
+        return exceptionMsg;
+    }
+
     private void submitDevice() {
         statusText.setText("Generating device attestation...");
         executor.submit(() -> {
@@ -212,7 +348,7 @@ public class MainActivity extends AppCompatActivity {
                 String output = json.toString(2);
                 runOnUiThread(() -> showSubmitResult(output));
             } catch (Exception e) {
-                Log.e("UAService", "Submit device failed", e);
+                Log.e(TAG,"Submit device failed", e);
                 runOnUiThread(() -> statusText.setText("Submit failed: " + e.getMessage()));
             }
         });

@@ -43,6 +43,10 @@ public class UaHttp {
         return response.getString("token");
     }
 
+    public static JSONObject postOemDeviceSubmit(String baseUrl, String token, JSONObject body) throws Exception {
+        return postJsonWithAuth(normalize(baseUrl) + "/api/v1/oem/device/submit", body, token);
+    }
+
     public static boolean pingBackend(String baseUrl) {
         try {
             fetchBackendInfo(baseUrl);
@@ -61,12 +65,19 @@ public class UaHttp {
     }
 
     private static JSONObject postJson(String url, JSONObject body) throws Exception {
+        return postJsonWithAuth(url, body, null);
+    }
+
+    private static JSONObject postJsonWithAuth(String url, JSONObject body, String authToken) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
         conn.setRequestProperty("Content-Type", "application/json");
-        conn.setConnectTimeout(8000);
-        conn.setReadTimeout(8000);
+        if (authToken != null) {
+            conn.setRequestProperty("Authorization", "Bearer " + authToken);
+        }
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(10000);
         byte[] bytes = body.toString().getBytes(StandardCharsets.UTF_8);
         conn.setFixedLengthStreamingMode(bytes.length);
         try (OutputStream os = conn.getOutputStream()) {
