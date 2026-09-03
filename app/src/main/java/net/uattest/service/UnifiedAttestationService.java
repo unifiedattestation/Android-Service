@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class UnifiedAttestationService extends Service {
     public static final int ERROR_INVALID_CALLER = 1;
@@ -32,6 +33,12 @@ public class UnifiedAttestationService extends Service {
                 return new ArrayList<>();
             }
             refreshBackends();
+            try {
+                executor.submit(UnifiedAttestationService.this::resolveBackendIds)
+                        .get(15, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                Log.w("UAService", "resolveBackendIds did not complete", e);
+            }
             List<String> ids = new ArrayList<>();
             for (BackendEntry entry : backends) {
                 if (entry.enabled && entry.backendId != null) {
@@ -140,7 +147,6 @@ public class UnifiedAttestationService extends Service {
     public void onCreate() {
         super.onCreate();
         backends = BackendStore.load(this);
-        executor.submit(this::resolveBackendIds);
         scheduleHealthChecks();
     }
 

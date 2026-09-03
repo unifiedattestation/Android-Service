@@ -66,9 +66,15 @@ public class MainActivity extends AppCompatActivity {
         refreshButton.setOnClickListener(v -> refreshHealth());
         submitButton.setOnClickListener(v -> submitDevice());
 
+        bindService(new Intent(this, UnifiedAttestationService.class), serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         backends = BackendStore.load(this);
         renderBackends();
-        bindService(new Intent(this, UnifiedAttestationService.class), serviceConnection, Context.BIND_AUTO_CREATE);
+        resolvePendingBackends();
     }
 
     @Override
@@ -79,6 +85,39 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception ignored) {
         }
         executor.shutdownNow();
+    }
+
+    private void resolvePendingBackends() {
+        boolean anyPending = false;
+        for (BackendEntry entry : backends) {
+            if (entry.backendId == null) {
+                anyPending = true;
+                break;
+            }
+        }
+        if (!anyPending) {
+            return;
+        }
+        executor.submit(() -> {
+            boolean changed = false;
+            for (BackendEntry entry : backends) {
+                if (entry.backendId == null) {
+                    try {
+                        BackendInfo info = UaHttp.fetchBackendInfo(entry.url);
+                        entry.backendId = info.backendId;
+                        entry.lastStatus = "ok";
+                        entry.lastCheckedAt = System.currentTimeMillis();
+                        changed = true;
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to resolve backendId for " + entry.url, e);
+                    }
+                }
+            }
+            if (changed) {
+                BackendStore.save(this, backends);
+                runOnUiThread(this::renderBackends);
+            }
+        });
     }
 
     private void addBackend() {
