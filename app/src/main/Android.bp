@@ -11,8 +11,7 @@ android_app {
         "bouncycastle-unbundled",
     ],
 
-    platform_apis: true,
-    privileged: true,
+    sdk_version: "current",
     product_specific: true,
     certificate: "platform",
 
