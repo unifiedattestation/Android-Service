@@ -7,7 +7,7 @@ android_app {
         "unifiedattestation-sdk",
         "androidx.appcompat_appcompat",
         "com.google.android.material_material",
-        "androidx.constraintlayout_constraintlayout",
+        "androidx-constraintlayout_constraintlayout",
         "bouncycastle-unbundled",
     ],
 
