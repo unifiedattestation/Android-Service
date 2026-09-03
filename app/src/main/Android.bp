@@ -1,0 +1,29 @@
+android_app {
+    name: "UnifiedAttestationService",
+
+    srcs: ["java/**/*.java"],
+
+    static_libs: [
+        "unifiedattestation-sdk",
+        "androidx.appcompat_appcompat",
+        "com.google.android.material_material",
+        "androidx.constraintlayout_constraintlayout",
+        "kotlin-stdlib",
+        "libprotobuf-java-lite",
+        // TODO: point this at whatever module provides
+        // com.android.keyattestation.verifier (from
+        // com.github.android:keyattestation in app/build.gradle) in this tree.
+        "android-key-attestation-verifier",
+    ],
+
+    platform_apis: true,
+    privileged: true,
+    product_specific: true,
+    certificate: "platform",
+
+    optimize: {
+        enabled: false,
+    },
+
+    min_sdk_version: "28",
+}

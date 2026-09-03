@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Merged into every Gradle-built variant only (see build.gradle sourceSets).
+         Intent filters are additive during manifest merging, so this shows the
+         app in the launcher for local/dev builds without touching the base
+         manifest that Soong builds use as-is (hidden, Settings-only). -->
+    <application>
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
