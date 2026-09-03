@@ -6,9 +6,9 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
 
-import com.android.keyattestation.verifier.AuthorizationList;
-import com.android.keyattestation.verifier.KeyDescription;
-import com.android.keyattestation.verifier.RootOfTrust;
+import net.uattest.service.keyattestation.AuthorizationList;
+import net.uattest.service.keyattestation.KeyDescription;
+import net.uattest.service.keyattestation.RootOfTrust;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,9 +18,7 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-
-import kotlin.Unit;
-import kotlin.jvm.functions.Function1;
+import java.util.function.Consumer;
 
 public class DeviceSubmitHelper {
 
@@ -45,8 +43,8 @@ public class DeviceSubmitHelper {
         X509Certificate ecLeaf = ecChain[0];
 
         // Parse device/policy fields from the EC leaf (primary)
-        Function1<String, Unit> noLog = msg -> Unit.INSTANCE;
-        KeyDescription desc = KeyDescription.Companion.parseFrom(ecLeaf, noLog);
+        Consumer<String> noLog = msg -> {};
+        KeyDescription desc = KeyDescription.parseFrom(ecLeaf, noLog);
         if (desc == null) {
             throw new IllegalStateException(
                     "No Key Attestation extension found — device may not support hardware attestation");
@@ -55,9 +53,9 @@ public class DeviceSubmitHelper {
         AuthorizationList hw = desc.getHardwareEnforced();
         RootOfTrust rot = hw.getRootOfTrust();
 
-        String verifiedBootKey   = rot != null ? bytesToHex(rot.getVerifiedBootKey().toByteArray()) : null;
+        String verifiedBootKey   = rot != null ? bytesToHex(rot.getVerifiedBootKey()) : null;
         String verifiedBootHash  = (rot != null && rot.getVerifiedBootHash() != null)
-                ? bytesToHex(rot.getVerifiedBootHash().toByteArray()) : null;
+                ? bytesToHex(rot.getVerifiedBootHash()) : null;
         String verifiedBootState = rot != null ? rot.getVerifiedBootState().name() : null;
         String osVersion    = hw.getOsVersion()    != null ? hw.getOsVersion().toString()    : null;
         String osPatchLevel = hw.getOsPatchLevel() != null ? hw.getOsPatchLevel().toString() : null;

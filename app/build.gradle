@@ -73,6 +73,8 @@ dependencies {
     implementation 'com.google.android.material:material:1.13.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     implementation 'net.uattest:android-sdk:0.1.0'
-    implementation 'com.github.android:keyattestation:a83ff03aa1c1'
-    implementation 'com.google.protobuf:protobuf-javalite:4.28.3'
+    // Provides org.bouncycastle.asn1.*, used by the vendored key-attestation extension
+    // parser in net.uattest.service.keyattestation (see that package for why it's vendored
+    // instead of depending on com.github.android:keyattestation).
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
 }

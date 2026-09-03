@@ -8,12 +8,7 @@ android_app {
         "androidx.appcompat_appcompat",
         "com.google.android.material_material",
         "androidx.constraintlayout_constraintlayout",
-        "kotlin-stdlib",
-        "libprotobuf-java-lite",
-        // TODO: point this at whatever module provides
-        // com.android.keyattestation.verifier (from
-        // com.github.android:keyattestation in app/build.gradle) in this tree.
-        "android-key-attestation-verifier",
+        "bouncycastle-unbundled",
     ],
 
     platform_apis: true,
